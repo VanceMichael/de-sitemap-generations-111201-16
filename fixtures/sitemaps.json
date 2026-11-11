@@ -1,0 +1,59 @@
+{
+  "generations": [
+    {
+      "name": "g1",
+      "root": [
+        "a.xml",
+        "b.xml"
+      ],
+      "children": {
+        "a.xml": [
+          "/1",
+          "/2"
+        ],
+        "b.xml": [
+          "/3"
+        ]
+      }
+    },
+    {
+      "name": "g2",
+      "root": [
+        "a.xml",
+        "c.xml"
+      ],
+      "children": {
+        "a.xml": [
+          "/1"
+        ],
+        "c.xml": [
+          "/4"
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "resource": "root",
+      "etag": "g1"
+    },
+    {
+      "resource": "a.xml",
+      "etag": "g2-a"
+    },
+    {
+      "resource": "b.xml",
+      "status": 503
+    },
+    {
+      "resource": "c.xml",
+      "references": [
+        "root"
+      ]
+    }
+  ],
+  "limits": {
+    "depth": 8,
+    "nodes": 100
+  }
+}
