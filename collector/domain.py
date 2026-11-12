@@ -1,5 +1,4 @@
 import gzip
-from urllib.parse import urlsplit
 from xml.etree import ElementTree
 
 
@@ -13,8 +12,8 @@ def parse_sitemap(raw, compressed=False):
     entries = []
     for child in root:
         values = {node.tag.rsplit('}', 1)[-1]: node.text for node in child}
-        location = values.get('loc', '')
-        if urlsplit(location).scheme not in ('http', 'https'):
+        location = (values.get('loc') or '').strip()
+        if not location:
             raise ValueError('地图地址无效')
         entries.append(dict(url=location, lastmod=values.get('lastmod')))
     return dict(kind=kind, entries=entries)

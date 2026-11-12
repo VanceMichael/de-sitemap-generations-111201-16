@@ -9,15 +9,43 @@ from .transport import Client, replay_server
 
 
 def main():
-    parser = argparse.ArgumentParser(description='本地采集与凭据查看')
-    parser.add_argument('command', choices=['demo', 'import', 'show', 'serve'])
+    parser = argparse.ArgumentParser(description='本地采集、代际遍历与凭据查看')
+    parser.add_argument('command',
+                        choices=['demo', 'import', 'show', 'serve', 'crawl-demo', 'crawl'])
     parser.add_argument('--input', default='fixtures/sample.json')
+    parser.add_argument('--fixture', default='fixtures/sitemaps.json')
     parser.add_argument('--db', default='var/records.sqlite3')
     parser.add_argument('--port', type=int, default=8080)
+    parser.add_argument('--root-url', help='crawl 命令的地图根地址，可重复传入')
+    parser.add_argument('--run-id', default=None)
     arguments = parser.parse_args()
     if arguments.command == 'serve':
         from .api import serve
         serve(arguments.db, arguments.port)
+        return
+    if arguments.command == 'crawl-demo':
+        from .scenario import run_scenario
+        with tempfile.TemporaryDirectory() as directory:
+            report = run_scenario(arguments.fixture,
+                                  str(Path(directory) / 'crawl.sqlite3'))
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+            print('\n===== 滚动换代说明 =====')
+            print(report['narrative'])
+        return
+    if arguments.command == 'crawl':
+        from .crawlstore import CrawlStore
+        from .crawler import Crawler, Fetcher
+        if not arguments.root_url:
+            parser.error('crawl 需要至少一个 --root-url')
+        Path(arguments.db).parent.mkdir(parents=True, exist_ok=True)
+        crawl_store = CrawlStore(arguments.db)
+        try:
+            run_id = arguments.run_id or f'run-{Path(arguments.db).stem}'
+            summary = Crawler(crawl_store, Fetcher(Client())).run(run_id,
+                                                                  [arguments.root_url])
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+        finally:
+            crawl_store.close()
         return
     if arguments.command == 'demo':
         with tempfile.TemporaryDirectory() as directory:
